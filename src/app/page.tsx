@@ -142,6 +142,20 @@ export default function Home() {
     { nome: "Gramado", local: "Brasil", preco: "R$ 3.400", imagem: "https://images.unsplash.com/photo-1542259009477-d625272157b7?q=80&w=800&auto=format&fit=crop" }
   ];
 
+  const handleDestinoClick = (nomeDestino: string, precoEstimado: string) => {
+    const precoNumerico = precoEstimado.replace(/\D/g, '');
+    
+    if (!user) {
+      setDestino(nomeDestino);
+      setOrcamento(precoNumerico);
+      setDuracao("5");
+      setSurpriseMe(false);
+      setIsLoginModalOpen(true);
+    } else {
+      router.push(`/dashboard?destino=${encodeURIComponent(nomeDestino)}&duracao=5&orcamento=${encodeURIComponent(precoNumerico)}&pessoas=1`);
+    }
+  };
+
   const handleQuestionClick = (question: string, answer: string) => {
     setChatMessages(prev => [...prev, { sender: 'user', text: question }]);
     setIsTyping(true);
@@ -198,7 +212,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="flex items-center gap-3">
-                <button onClick={() => router.push('/dashboard')} className="hidden sm:block text-white font-medium hover:text-emerald-300 transition-colors mr-2">
+                <button onClick={() => router.push('/saved')} className="hidden sm:block text-white font-medium hover:text-emerald-300 transition-colors mr-2">
                   Meus Roteiros
                 </button>
                 <div className="w-10 h-10 rounded-full border-2 border-emerald-500 overflow-hidden cursor-pointer bg-slate-200" title={user.displayName || "Perfil"}>
@@ -411,7 +425,8 @@ export default function Home() {
             <div className="animate-marquee gap-6 px-4 sm:px-6 pb-12 pt-4">
               {[...destinos, ...destinos].map((destino, index) => (
                 <div 
-                  key={index} 
+                  key={index}
+                  onClick={() => handleDestinoClick(destino.nome, destino.preco)}
                   className="group rounded-3xl overflow-hidden cursor-pointer relative h-80 min-w-[280px] sm:min-w-[320px] shrink-0 border border-white/40 shadow-[0_15px_40px_-10px_rgba(0,0,0,0.15)] transition-all hover:shadow-[0_20px_50px_-10px_rgba(0,0,0,0.2)]"
                 >
                   <div 
