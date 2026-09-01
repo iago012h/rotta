@@ -65,6 +65,10 @@ export default function Home() {
   // Estado de Autenticação
   const [user, setUser] = useState<FirebaseUser | null>(null);
 
+  // Estado para Confirmar Pessoas em Destinos Populares
+  const [destinoParaConfirmar, setDestinoParaConfirmar] = useState<{nome: string, preco: string} | null>(null);
+  const [pessoasConfirmacao, setPessoasConfirmacao] = useState("1");
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
@@ -143,17 +147,8 @@ export default function Home() {
   ];
 
   const handleDestinoClick = (nomeDestino: string, precoEstimado: string) => {
-    const precoNumerico = precoEstimado.replace(/\D/g, '');
-    
-    if (!user) {
-      setDestino(nomeDestino);
-      setOrcamento(precoNumerico);
-      setDuracao("5");
-      setSurpriseMe(false);
-      setIsLoginModalOpen(true);
-    } else {
-      router.push(`/dashboard?destino=${encodeURIComponent(nomeDestino)}&duracao=5&orcamento=${encodeURIComponent(precoNumerico)}&pessoas=1`);
-    }
+    setDestinoParaConfirmar({ nome: nomeDestino, preco: precoEstimado });
+    setPessoasConfirmacao("1");
   };
 
   const handleQuestionClick = (question: string, answer: string) => {
@@ -198,6 +193,57 @@ export default function Home() {
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
               Continuar com Google
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMAÇÃO DE DESTINO POPULAR */}
+      {destinoParaConfirmar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setDestinoParaConfirmar(null)}
+              className="absolute top-4 right-4 p-2 text-gray-400 hover:text-slate-900 bg-gray-50 hover:bg-gray-100 rounded-full transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-3xl font-serif font-bold mb-2">Partiu {destinoParaConfirmar.nome}?</h2>
+            <p className="text-gray-500 mb-6">Quantas pessoas vão curtir essa viagem com você?</p>
+            
+            <div className="flex flex-col w-full mb-6 relative group">
+              <span className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Viajantes</span>
+              <select 
+                value={pessoasConfirmacao}
+                onChange={(e) => setPessoasConfirmacao(e.target.value)}
+                className="bg-gray-50 border border-gray-200 hover:border-emerald-500 transition-colors p-4 rounded-xl outline-none text-slate-900 font-medium w-full text-sm sm:text-base appearance-none cursor-pointer"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
+                  <option key={num} value={num}>{num} {num === 1 ? 'Pessoa' : 'Pessoas'}</option>
+                ))}
+                <option value="9+">9+ Pessoas</option>
+              </select>
+            </div>
+
+            <button 
+              onClick={() => {
+                const precoNumerico = destinoParaConfirmar.preco.replace(/\D/g, '');
+                if (!user) {
+                  setDestino(destinoParaConfirmar.nome);
+                  setOrcamento(precoNumerico);
+                  setDuracao("5");
+                  setPessoas(pessoasConfirmacao);
+                  setSurpriseMe(false);
+                  setDestinoParaConfirmar(null);
+                  setIsLoginModalOpen(true);
+                } else {
+                  router.push(`/dashboard?destino=${encodeURIComponent(destinoParaConfirmar.nome)}&duracao=5&orcamento=${encodeURIComponent(precoNumerico)}&pessoas=${encodeURIComponent(pessoasConfirmacao)}`);
+                }
+              }}
+              className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white hover:bg-emerald-700 p-4 rounded-2xl font-medium transition"
+            >
+              <Sparkles className="w-5 h-5" />
+              Criar Roteiro Mágico
             </button>
           </div>
         </div>
