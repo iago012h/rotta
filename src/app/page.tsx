@@ -68,6 +68,7 @@ export default function Home() {
   // Estado para Confirmar Pessoas em Destinos Populares
   const [destinoParaConfirmar, setDestinoParaConfirmar] = useState<{nome: string, preco: string} | null>(null);
   const [pessoasConfirmacao, setPessoasConfirmacao] = useState("1");
+  const [orcamentoConfirmacao, setOrcamentoConfirmacao] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const searchBarRef = useRef<HTMLDivElement>(null);
@@ -149,6 +150,7 @@ export default function Home() {
   const handleDestinoClick = (nomeDestino: string, precoEstimado: string) => {
     setDestinoParaConfirmar({ nome: nomeDestino, preco: precoEstimado });
     setPessoasConfirmacao("1");
+    setOrcamentoConfirmacao("");
   };
 
   const handleQuestionClick = (question: string, answer: string) => {
@@ -209,9 +211,9 @@ export default function Home() {
               <X className="w-5 h-5" />
             </button>
             <h2 className="text-3xl font-serif font-bold mb-2">Partiu {destinoParaConfirmar.nome}?</h2>
-            <p className="text-gray-500 mb-6">Quantas pessoas vão curtir essa viagem com você?</p>
+            <p className="text-gray-500 mb-6">Personalize os últimos detalhes para a sua viagem.</p>
             
-            <div className="flex flex-col w-full mb-6 relative group">
+            <div className="flex flex-col w-full mb-4 relative group">
               <span className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Viajantes</span>
               <select 
                 value={pessoasConfirmacao}
@@ -225,19 +227,33 @@ export default function Home() {
               </select>
             </div>
 
+            <div className="flex flex-col w-full mb-6 relative group">
+              <span className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">Orçamento Total</span>
+              <div className="flex items-center bg-gray-50 border border-gray-200 hover:border-emerald-500 transition-colors p-4 rounded-xl">
+                <span className="text-sm sm:text-base text-slate-900 font-medium mr-2">R$</span>
+                <input 
+                  type="number" 
+                  value={orcamentoConfirmacao}
+                  onChange={(e) => setOrcamentoConfirmacao(e.target.value)}
+                  placeholder="Ex: 5000" 
+                  className="bg-transparent outline-none text-slate-900 font-medium placeholder-gray-400 w-full text-sm sm:text-base appearance-none" 
+                />
+              </div>
+            </div>
+
             <button 
               onClick={() => {
-                const precoNumerico = destinoParaConfirmar.preco.replace(/\D/g, '');
+                const finalOrcamento = orcamentoConfirmacao.trim() ? orcamentoConfirmacao : destinoParaConfirmar.preco.replace(/\D/g, '');
                 if (!user) {
                   setDestino(destinoParaConfirmar.nome);
-                  setOrcamento(precoNumerico);
+                  setOrcamento(finalOrcamento);
                   setDuracao("5");
                   setPessoas(pessoasConfirmacao);
                   setSurpriseMe(false);
                   setDestinoParaConfirmar(null);
                   setIsLoginModalOpen(true);
                 } else {
-                  router.push(`/dashboard?destino=${encodeURIComponent(destinoParaConfirmar.nome)}&duracao=5&orcamento=${encodeURIComponent(precoNumerico)}&pessoas=${encodeURIComponent(pessoasConfirmacao)}`);
+                  router.push(`/dashboard?destino=${encodeURIComponent(destinoParaConfirmar.nome)}&duracao=5&orcamento=${encodeURIComponent(finalOrcamento)}&pessoas=${encodeURIComponent(pessoasConfirmacao)}`);
                 }
               }}
               className="w-full flex items-center justify-center gap-3 bg-emerald-600 text-white hover:bg-emerald-700 p-4 rounded-2xl font-medium transition"
@@ -482,7 +498,7 @@ export default function Home() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 p-6 w-full">
                     <h3 className="text-2xl font-bold text-white mb-1">{destino.nome}</h3>
-                    <p className="text-white/90 font-medium text-sm">{destino.local} • {destino.preco}</p>
+                    <p className="text-white/90 font-medium text-sm">{destino.local}</p>
                   </div>
                 </div>
               ))}
@@ -555,8 +571,8 @@ export default function Home() {
           </div>
           <p className="text-sm text-gray-400">© 2026 Rotta. Construído para transformar viagens.</p>
           <div className="flex gap-4">
-            <span className="text-sm text-gray-400 hover:text-white cursor-pointer">Termos</span>
-            <span className="text-sm text-gray-400 hover:text-white cursor-pointer">Privacidade</span>
+            <a href="/termos" className="text-sm text-gray-400 hover:text-white cursor-pointer transition">Termos</a>
+            <a href="/privacidade" className="text-sm text-gray-400 hover:text-white cursor-pointer transition">Privacidade</a>
           </div>
         </div>
       </footer>
