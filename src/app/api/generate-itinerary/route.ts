@@ -32,54 +32,77 @@ export async function POST(req: Request) {
       3. Se a opção for SURPREENDA-ME, escolha um destino que CAIBA no orçamento informado.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-flash-latest',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            title: { type: Type.STRING },
-            description: { 
-              type: Type.STRING, 
-              description: 'Resumo do roteiro e um "Choque de Realidade" se o orçamento for irreal para o destino.' 
-            },
-            days: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  dayNumber: { type: Type.INTEGER },
-                  title: { type: Type.STRING },
-                  theme: { type: Type.STRING },
-                  summary: { type: Type.STRING },
-                  events: {
-                    type: Type.ARRAY,
-                    items: {
-                      type: Type.OBJECT,
-                      properties: {
-                        title: { type: Type.STRING },
-                        time: { type: Type.STRING },
-                        description: { type: Type.STRING },
-                        location: { type: Type.STRING },
-                        estimatedCost: { type: Type.STRING, description: 'Ex: R$ 0, R$ 45, R$ 120' },
-                        type: { type: Type.STRING, enum: ['food', 'sightseeing', 'transit'] }
-                      },
-                      required: ['title', 'time', 'description', 'location', 'estimatedCost', 'type']
-                    }
-                  }
+    let response;
+    let retries = 3;
+    let delay = 2000;
+
+    while (retries > 0) {
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-flash-latest',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                title: { type: Type.STRING },
+                description: { 
+                  type: Type.STRING, 
+                  description: 'Resumo do roteiro e um "Choque de Realidade" se o orçamento for irreal para o destino.' 
                 },
-                required: ['dayNumber', 'title', 'theme', 'summary', 'events']
-              }
+                days: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      dayNumber: { type: Type.INTEGER },
+                      title: { type: Type.STRING },
+                      theme: { type: Type.STRING },
+                      summary: { type: Type.STRING },
+                      events: {
+                        type: Type.ARRAY,
+                        items: {
+                          type: Type.OBJECT,
+                          properties: {
+                            title: { type: Type.STRING },
+                            time: { type: Type.STRING },
+                            description: { type: Type.STRING },
+                            location: { type: Type.STRING },
+                            estimatedCost: { type: Type.STRING, description: 'Ex: R$ 0, R$ 45, R$ 120' },
+                            type: { type: Type.STRING, enum: ['food', 'sightseeing', 'transit'] }
+                          },
+                          required: ['title', 'time', 'description', 'location', 'estimatedCost', 'type']
+                        }
+                      }
+                    },
+                    required: ['dayNumber', 'title', 'theme', 'summary', 'events']
+                  }
+                }
+              },
+              required: ['title', 'description', 'days']
             }
-          },
-          required: ['title', 'description', 'days']
+          }
+        });
+        break; // Sucesso, quebra o loop de retry
+      } catch (error: any) {
+        retries -= 1;
+        if (retries === 0) throw error;
+        
+        // Verifica se é um erro de alta demanda (503) ou rate limit (429)
+        const isRetryable = error?.status === 503 || error?.status === 429 || error?.message?.includes('503') || error?.message?.includes('429') || error?.message?.includes('UNAVAILABLE') || error?.message?.includes('demand');
+        
+        if (isRetryable) {
+          console.warn(`Erro 503/429 na API. Tentando novamente em ${delay}ms... Restam ${retries} tentativas.`);
+          await new Promise(res => setTimeout(res, delay));
+          delay *= 2; // Exponential backoff: 2s, 4s, 8s...
+        } else {
+          throw error; // Se for outro erro, falha imediatamente
         }
       }
-    });
+    }
 
-    const itineraryData = JSON.parse(response.text || '{}');
+    const itineraryData = JSON.parse(response?.text || '{}');
 
     return NextResponse.json(itineraryData);
 
