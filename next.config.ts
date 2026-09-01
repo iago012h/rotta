@@ -2,16 +2,16 @@ import type { NextConfig } from "next";
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https:;
-  style-src 'self' 'unsafe-inline' https:;
-  img-src 'self' blob: data: https:;
-  font-src 'self' data: https:;
+  script-src 'self' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' blob: data: https://ui-avatars.com https://*.googleusercontent.com;
+  font-src 'self' data: https://fonts.gstatic.com;
   object-src 'none';
   base-uri 'self';
   form-action 'self';
   frame-ancestors 'none';
-  connect-src 'self' https: wss:;
-  frame-src 'self' https:;
+  connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com;
+  frame-src 'self' https://*.firebaseapp.com;
 `.replace(/\s{2,}/g, ' ').trim();
 
 const nextConfig: NextConfig = {
