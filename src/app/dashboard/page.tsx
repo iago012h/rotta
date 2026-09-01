@@ -227,7 +227,7 @@ function DashboardContent() {
               <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-emerald-100/50">
                 <Compass className="w-10 h-10 text-emerald-600 animate-spin-slow" />
               </div>
-              <h2 className="text-3xl font-serif font-bold text-slate-900 mb-3 text-center">A IA está desenhando sua jornada...</h2>
+              <h2 className="text-3xl font-serif font-bold text-slate-900 mb-3 text-center">A IA da Rotta está desenhando sua jornada...</h2>
               <p className="text-slate-500 font-medium max-w-md text-center">Analisando o orçamento de {orcamento} para {duracao} em {destino === 'SURPREENDA-ME' ? 'um destino surpresa' : destino}. Isso leva cerca de 15 segundos.</p>
             </div>
             
@@ -276,7 +276,7 @@ function DashboardContent() {
                   <button 
                     onClick={() => {
                       try {
-                        const msg = `Olha o roteiro que a IA gerou pra mim: ${itinerary.title}!\n\nConfira aqui: ${window.location.href}`;
+                        const msg = `Olha o roteiro que a IA da Rotta gerou pra mim: ${itinerary.title}!\n\nConfira aqui: ${window.location.href}`;
                         window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
                       } catch (e) {
                         alert("Não foi possível abrir o WhatsApp.");
@@ -288,27 +288,7 @@ function DashboardContent() {
                     <Share2 className="w-5 h-5" />
                   </button>
                   <button 
-                    onClick={async () => {
-                      try {
-                        const element = document.getElementById('itinerary-content');
-                        if (!element) return;
-                        
-                        // @ts-ignore
-                        const html2pdfModule = await import('html2pdf.js');
-                        const html2pdf = html2pdfModule.default || html2pdfModule;
-                        
-                        const opt = {
-                          margin:       0.5,
-                          filename:     `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-                          image:        { type: 'jpeg', quality: 0.98 },
-                          html2canvas:  { scale: 2, useCORS: true },
-                          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-                        };
-                        html2pdf().set(opt).from(element).save();
-                      } catch (e: any) {
-                        alert("Erro ao gerar PDF: " + e?.message);
-                      }
-                    }}
+                    onClick={() => window.print()}
                     className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" 
                     title="Baixar Arquivo PDF"
                   >
