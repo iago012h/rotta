@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, getDoc } from 'firebase/firestore';
 import { Calendar, Coffee, MapPin, Navigation, Clock, LogOut, FileText, Share2, Download, AlertCircle, Compass, Camera, Utensils, Moon, Sparkles } from 'lucide-react';
 
 // Tipagem do Roteiro Gerado
@@ -44,6 +44,7 @@ function DashboardContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  const id = searchParams.get('id');
   const destino = searchParams.get('destino');
   const duracao = searchParams.get('duracao');
   const orcamento = searchParams.get('orcamento');
@@ -62,23 +63,44 @@ function DashboardContent() {
     return () => unsubscribe();
   }, [router]);
 
-  // Chama a IA para gerar o roteiro
+  // Carrega ou Gera o Roteiro
   useEffect(() => {
     if (isAuthLoading || !user) return;
     
-    if (!destino || !duracao || !orcamento) {
-      setGenerateError("Dados da viagem incompletos. Por favor, volte e preencha a busca novamente.");
-      setIsGenerating(false);
-      return;
-    }
-
-    async function fetchItinerary() {
+    async function loadItinerary() {
       try {
+        // Se tem ID na URL, é um roteiro salvo! Busca do Firestore.
+        if (id) {
+          const docRef = doc(db, 'itineraries', id);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            // Segurança básica para não ver roteiros de outros
+            if (data.userId !== user.uid) {
+              setGenerateError("Você não tem permissão para ver este roteiro.");
+              return;
+            }
+            setItinerary(data.itinerary);
+            setSavedSuccess(true); // Já está salvo
+          } else {
+            setGenerateError("Roteiro não encontrado no banco de dados.");
+          }
+          return;
+        }
+
+        // Se não tem ID, precisa gerar um novo com a IA
+        if (!destino || !duracao || !orcamento) {
+          setGenerateError("Dados da viagem incompletos. Por favor, volte e preencha a busca novamente.");
+          return;
+        }
+
         const res = await fetch('/api/generate-itinerary', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ destino, duracao, orcamento, pessoas })
         });
+        
         if (!res.ok) {
           const errorData = await res.json();
           throw new Error(errorData.details || 'Falha na resposta da API');
@@ -94,8 +116,8 @@ function DashboardContent() {
       }
     }
 
-    fetchItinerary();
-  }, [isAuthLoading, user, destino, duracao, orcamento]);
+    loadItinerary();
+  }, [isAuthLoading, user, id, destino, duracao, orcamento, pessoas]);
 
   const handleSave = async () => {
     if (!user || !itinerary) return;
@@ -156,7 +178,7 @@ function DashboardContent() {
               <Compass className="w-5 h-5" />
               Novo Roteiro IA
             </button>
-            <button className="flex items-center gap-3 bg-slate-800/80 text-white px-5 py-4 rounded-xl font-medium transition border border-slate-700">
+            <button onClick={() => router.push('/saved')} className="flex items-center gap-3 bg-slate-800/80 text-white px-5 py-4 rounded-xl font-medium transition border border-slate-700 hover:bg-slate-700">
               <FileText className="w-5 h-5" />
               Roteiros Salvos
             </button>
@@ -230,7 +252,7 @@ function DashboardContent() {
           </div>
         ) : itinerary ? (
           // ROTEIRO PRONTO PREMIUM (Dados Reais do Gemini)
-          <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-10 fade-in duration-700 pb-20">
+          <div id="itinerary-content" className="max-w-5xl mx-auto animate-in slide-in-from-bottom-10 fade-in duration-700 pb-20">
             
             {/* Cabeçalho do Roteiro */}
             <div className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-gray-100 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] mb-10 relative overflow-hidden">
@@ -250,11 +272,35 @@ function DashboardContent() {
                   </p>
                 </div>
                 
-                <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0">
-                  <button className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" title="Compartilhar Roteiro">
+                <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 print:hidden">
+                  <button 
+                    onClick={() => {
+                      const msg = `Olha o roteiro que a IA gerou pra mim: ${itinerary.title}!\n\nConfira aqui: ${window.location.href}`;
+                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                    }}
+                    className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" 
+                    title="Compartilhar no WhatsApp"
+                  >
                     <Share2 className="w-5 h-5" />
                   </button>
-                  <button className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" title="Baixar PDF Offline">
+                  <button 
+                    onClick={async () => {
+                      const element = document.getElementById('itinerary-content');
+                      if (!element) return;
+                      // @ts-ignore
+                      const html2pdf = (await import('html2pdf.js')).default;
+                      const opt = {
+                        margin:       0.5,
+                        filename:     `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true },
+                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                      };
+                      html2pdf().set(opt).from(element).save();
+                    }}
+                    className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" 
+                    title="Baixar Arquivo PDF"
+                  >
                     <Download className="w-5 h-5" />
                   </button>
                   <button 
