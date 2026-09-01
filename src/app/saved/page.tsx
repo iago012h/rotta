@@ -111,7 +111,7 @@ export default function SavedItineraries() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto relative h-screen bg-slate-50">
+      <main className="flex-1 p-4 md:p-10 bg-slate-50/50">
         
         <div className="max-w-5xl mx-auto">
           <div className="mb-10">

@@ -208,7 +208,7 @@ function DashboardContent() {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 p-4 md:p-10 overflow-y-auto relative h-screen bg-slate-50/50">
+      <main className="flex-1 p-4 md:p-10 bg-slate-50/50">
         
         {generateError ? (
           // ERRO NA GERAÇÃO
@@ -275,8 +275,12 @@ function DashboardContent() {
                 <div className="flex flex-wrap md:flex-nowrap gap-3 shrink-0 print:hidden">
                   <button 
                     onClick={() => {
-                      const msg = `Olha o roteiro que a IA gerou pra mim: ${itinerary.title}!\n\nConfira aqui: ${window.location.href}`;
-                      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                      try {
+                        const msg = `Olha o roteiro que a IA gerou pra mim: ${itinerary.title}!\n\nConfira aqui: ${window.location.href}`;
+                        window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+                      } catch (e) {
+                        alert("Não foi possível abrir o WhatsApp.");
+                      }
                     }}
                     className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" 
                     title="Compartilhar no WhatsApp"
@@ -285,19 +289,25 @@ function DashboardContent() {
                   </button>
                   <button 
                     onClick={async () => {
-                      const element = document.getElementById('itinerary-content');
-                      if (!element) return;
-                      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                      // @ts-ignore
-                      const html2pdf = (await import('html2pdf.js')).default;
-                      const opt = {
-                        margin:       0.5,
-                        filename:     `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-                        image:        { type: 'jpeg' as const, quality: 0.98 },
-                        html2canvas:  { scale: 2, useCORS: true },
-                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
-                      };
-                      html2pdf().set(opt).from(element).save();
+                      try {
+                        const element = document.getElementById('itinerary-content');
+                        if (!element) return;
+                        
+                        // @ts-ignore
+                        const html2pdfModule = await import('html2pdf.js');
+                        const html2pdf = html2pdfModule.default || html2pdfModule;
+                        
+                        const opt = {
+                          margin:       0.5,
+                          filename:     `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
+                          image:        { type: 'jpeg', quality: 0.98 },
+                          html2canvas:  { scale: 2, useCORS: true },
+                          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                        };
+                        html2pdf().set(opt).from(element).save();
+                      } catch (e: any) {
+                        alert("Erro ao gerar PDF: " + e?.message);
+                      }
                     }}
                     className="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-2xl text-slate-700 transition" 
                     title="Baixar Arquivo PDF"
