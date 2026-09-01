@@ -102,7 +102,8 @@ export async function POST(req: Request) {
       }
     }
 
-    const itineraryData = JSON.parse(response?.text || '{}');
+    const jsonText = response?.text() || '{}';
+    const itineraryData = JSON.parse(jsonText);
 
     return NextResponse.json(itineraryData);
 
