@@ -77,7 +77,7 @@ function DashboardContent() {
           if (docSnap.exists()) {
             const data = docSnap.data();
             // Segurança básica para não ver roteiros de outros
-            if (data.userId !== user.uid) {
+            if (data.userId !== user!.uid) {
               setGenerateError("Você não tem permissão para ver este roteiro.");
               return;
             }
@@ -287,14 +287,15 @@ function DashboardContent() {
                     onClick={async () => {
                       const element = document.getElementById('itinerary-content');
                       if (!element) return;
+                      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                       // @ts-ignore
                       const html2pdf = (await import('html2pdf.js')).default;
                       const opt = {
                         margin:       0.5,
                         filename:     `${itinerary.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`,
-                        image:        { type: 'jpeg', quality: 0.98 },
+                        image:        { type: 'jpeg' as const, quality: 0.98 },
                         html2canvas:  { scale: 2, useCORS: true },
-                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
                       };
                       html2pdf().set(opt).from(element).save();
                     }}

@@ -34,7 +34,7 @@ export default function SavedItineraries() {
         ...doc.data()
       }));
       // Ordenar localmente por data (Firebase precisa de index composto se misturar where e orderBy)
-      trips.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      trips.sort((a, b) => new Date((b as any).createdAt).getTime() - new Date((a as any).createdAt).getTime());
       setSavedTrips(trips);
     } catch (error) {
       console.error("Erro ao buscar roteiros:", error);
