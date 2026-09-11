@@ -323,7 +323,7 @@ function DashboardContent() {
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0">
                   <a 
-                    href={`https://www.skyscanner.com.br/transporte/passagens-aereas/br/${encodeURIComponent(destino || '')}?associado=seu_id_de_afiliado`} 
+                    href={`https://www.skyscanner.com.br/transporte/passagens-aereas/br/${encodeURIComponent(destino || '')}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium transition text-center shadow-lg shadow-emerald-900/20"
@@ -331,12 +331,12 @@ function DashboardContent() {
                     Pesquisar Voos
                   </a>
                   <a 
-                    href={`https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(destino || '')}&aid=seu_id_de_afiliado`} 
+                    href={`https://www.airbnb.com.br/s/${encodeURIComponent(destino || '')}/homes`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-medium transition text-center shadow-lg shadow-blue-900/20"
+                    className="bg-[#FF5A5F] hover:bg-[#e04e53] text-white px-6 py-3 rounded-xl font-medium transition text-center shadow-lg shadow-red-900/20"
                   >
-                    Ver Hotéis
+                    Ver no Airbnb
                   </a>
                 </div>
               </div>
